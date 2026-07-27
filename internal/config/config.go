@@ -138,6 +138,11 @@ func (c *Config) Validate() error {
 			if !providerIDs[t.ProviderID] {
 				return fmt.Errorf("route %s/%s: provider %s not found", r.AppID, r.Model, t.ProviderID)
 			}
+			if models, ok := providerModels[t.ProviderID]; ok && len(models) > 0 {
+				if !models[r.Model] {
+					return fmt.Errorf("route %s/%s: model %s not supported by provider %s", r.AppID, r.Model, r.Model, t.ProviderID)
+				}
+			}
 		}
 	}
 
