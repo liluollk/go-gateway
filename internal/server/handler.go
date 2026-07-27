@@ -10,11 +10,12 @@ import (
 )
 
 type Handler struct {
-	cfg *config.Config
+	cfg    *config.Config
+	logger *middleware.Logger
 }
 
-func NewHandler(cfg *config.Config) *Handler {
-	return &Handler{cfg: cfg}
+func NewHandler(cfg *config.Config, logger *middleware.Logger) *Handler {
+	return &Handler{cfg: cfg, logger: logger}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -34,9 +35,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	authCfg := middleware.NewAuthConfig(authKeys)
 	authMiddleware := middleware.Auth(authCfg)
 
-	mux.HandleFunc("/healthz", h.HealthCheck)                                                                 // 无鉴权
-	mux.Handle("/v1/models", middleware.RequestID(authMiddleware(http.HandlerFunc(h.ListModels))))
-	mux.Handle("/v1/chat/completions", middleware.RequestID(authMiddleware(http.HandlerFunc(h.ChatCompletion))))
+	mux.HandleFunc("/healthz", h.HealthCheck) // 无鉴权，无日志
+	mux.Handle("/v1/models", middleware.RequestID(authMiddleware(h.logger.LoggingMiddleware(http.HandlerFunc(h.ListModels)))))
+	mux.Handle("/v1/chat/completions", middleware.RequestID(authMiddleware(h.logger.LoggingMiddleware(http.HandlerFunc(h.ChatCompletion)))))
 }
 
 func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {

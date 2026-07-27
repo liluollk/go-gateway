@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go-gateway/internal/config"
+	"go-gateway/internal/middleware"
 	"go-gateway/internal/server"
 )
 
@@ -20,7 +21,13 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	handler := server.NewHandler(cfg)
+	logger, err := middleware.NewLogger("logs")
+	if err != nil {
+		log.Fatalf("Failed to create logger: %v", err)
+	}
+	defer logger.Close()
+
+	handler := server.NewHandler(cfg, logger)
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
 
