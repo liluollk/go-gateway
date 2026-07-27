@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -65,7 +66,7 @@ func (h *Handler) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 流式 — Task 1.6 实现
-	http.Error(w, "streaming not yet implemented", http.StatusNotImplemented)
+	h.handleStreaming(w, r, &req, appID)
 }
 
 func (h *Handler) handleNonStreaming(w http.ResponseWriter, r *http.Request, req *model.ChatCompletionRequest, appID string) {
@@ -140,4 +141,71 @@ func (h *Handler) callOpenAI(ctx context.Context, provider *config.ProviderConfi
 	}
 
 	return &chatResp, nil
+}
+
+func (h *Handler) handleStreaming(w http.ResponseWriter, r *http.Request, req *model.ChatCompletionRequest, appID string) {
+	provider := h.findProvider(req.Model)
+	if provider == nil {
+		errors.NewProviderUnavailable().ToHTTP(w, http.StatusServiceUnavailable)
+		return
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		errors.NewProviderError("marshal request: "+err.Error()).ToHTTP(w, http.StatusBadGateway)
+		return
+	}
+
+	httpReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, provider.BaseURL+"/v1/chat/completions", bytes.NewReader(reqBody))
+	if err != nil {
+		errors.NewProviderError("create request: "+err.Error()).ToHTTP(w, http.StatusBadGateway)
+		return
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+provider.APIKey)
+
+	client := &http.Client{Timeout: 300 * time.Second}
+	upstreamResp, err := client.Do(httpReq)
+	if err != nil {
+		errors.NewProviderError("upstream request: "+err.Error()).ToHTTP(w, http.StatusBadGateway)
+		return
+	}
+	defer upstreamResp.Body.Close()
+
+	if upstreamResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(upstreamResp.Body)
+		errors.NewProviderError(fmt.Sprintf("upstream status %d: %s", upstreamResp.StatusCode, string(body))).ToHTTP(w, http.StatusBadGateway)
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		errors.NewProviderError("streaming not supported").ToHTTP(w, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.WriteHeader(http.StatusOK)
+
+	reader := bufio.NewReader(upstreamResp.Body)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				// 确保发送 [DONE]
+				w.Write([]byte("data: [DONE]\n\n"))
+				flusher.Flush()
+			}
+			return
+		}
+
+		_, writeErr := w.Write([]byte(line))
+		if writeErr != nil {
+			// 客户端断开连接，取消上游请求
+			return
+		}
+		flusher.Flush()
+	}
 }
