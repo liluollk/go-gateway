@@ -68,7 +68,3 @@ func (h *Handler) ListModels(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) ChatCompletion(w http.ResponseWriter, r *http.Request) {
-	// TODO: 逐步实现 — Task 1.5, 1.6, 1.7
-	http.Error(w, "not implemented", http.StatusNotImplemented)
-}
