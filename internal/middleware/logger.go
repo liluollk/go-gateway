@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -29,17 +28,11 @@ type LogEntry struct {
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
-	body       bytes.Buffer
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
-}
-
-func (rw *responseWriter) Write(b []byte) (int, error) {
-	rw.body.Write(b)
-	return rw.ResponseWriter.Write(b)
 }
 
 type Logger struct {
@@ -63,7 +56,10 @@ func NewLogger(dir string) (*Logger, error) {
 func (l *Logger) rotate() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	return l.rotateLocked()
+}
 
+func (l *Logger) rotateLocked() error {
 	if l.file != nil {
 		l.file.Close()
 	}
@@ -89,7 +85,7 @@ func (l *Logger) Write(entry *LogEntry) {
 			today := time.Now().Format("2006-01-02")
 			expected := fmt.Sprintf("gateway-%s.log", today)
 			if info.Name() != expected {
-				l.rotate()
+				l.rotateLocked()
 			}
 		}
 	}

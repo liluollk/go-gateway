@@ -20,6 +20,13 @@ go.work.sum
 *.swp
 *.swo
 
+# Config
+config.yaml
+
+# Logs
+logs/
+test_logs/
+
 # OS
 .DS_Store
 Thumbs.db

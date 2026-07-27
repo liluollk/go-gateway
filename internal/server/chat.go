@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -80,7 +81,8 @@ func (h *Handler) handleNonStreaming(w http.ResponseWriter, r *http.Request, req
 	// 转发到上游
 	upstreamResp, err := h.callOpenAI(r.Context(), provider, req)
 	if err != nil {
-		errors.NewProviderError(err.Error()).ToHTTP(w, http.StatusBadGateway)
+		log.Printf("upstream request failed: %v", err)
+		errors.NewProviderError("upstream request failed").ToHTTP(w, http.StatusBadGateway)
 		return
 	}
 
@@ -132,7 +134,8 @@ func (h *Handler) callOpenAI(ctx context.Context, provider *config.ProviderConfi
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("upstream status %d: %s", resp.StatusCode, string(respBody))
+		log.Printf("upstream error: status=%d body=%s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("upstream request failed")
 	}
 
 	var chatResp model.ChatCompletionResponse
@@ -174,7 +177,8 @@ func (h *Handler) handleStreaming(w http.ResponseWriter, r *http.Request, req *m
 
 	if upstreamResp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(upstreamResp.Body)
-		errors.NewProviderError(fmt.Sprintf("upstream status %d: %s", upstreamResp.StatusCode, string(body))).ToHTTP(w, http.StatusBadGateway)
+		log.Printf("upstream error: status=%d body=%s", upstreamResp.StatusCode, string(body))
+		errors.NewProviderError("upstream service error").ToHTTP(w, http.StatusBadGateway)
 		return
 	}
 
