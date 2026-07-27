@@ -18,7 +18,7 @@ func Load(path string) (*Config, error) {
 		Server: ServerConfig{
 			Port:         8080,
 			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 60 * time.Second,
+			WriteTimeout: 300 * time.Second,
 		},
 	}, nil
 }

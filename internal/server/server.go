@@ -16,7 +16,7 @@ func NewHandler(cfg *config.Config) *Handler {
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	// TODO: register routes in task 2.2
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
