@@ -6,16 +6,19 @@ server:
 auth:
   keys:
     - key: sk-gateway-dev
-      app_id: app-demo
       models:
         - gpt-4o
         - gpt-4o-mini
         - claude-sonnet-4
 
 rate_limit:
-  app-demo:
+  sk-gateway-dev:
     qps: 100
     rpm: 6000
+
+retry:
+  max_retries: 2
+  initial_backoff: 1s
 
 providers:
   - id: openai-main
@@ -34,13 +37,13 @@ providers:
       - claude-sonnet-4
 
 routes:
-  - app_id: app-demo
+  - key: sk-gateway-dev
     model: gpt-4o
     providers:
       - provider_id: openai-main
         weight: 100
 
-  - app_id: app-demo
+  - key: sk-gateway-dev
     model: claude-sonnet-4
     providers:
       - provider_id: claude-main

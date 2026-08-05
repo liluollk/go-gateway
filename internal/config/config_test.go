@@ -40,14 +40,13 @@ server:
 auth:
   keys:
     - key: sk-test
-      app_id: app-test
 providers:
   - id: bad-provider
     type: invalid-type
     base_url: https://example.com
     api_key: test-key
 routes:
-  - app_id: app-test
+  - key: sk-test
     model: test-model
     providers:
       - provider_id: bad-provider
@@ -74,7 +73,6 @@ server:
 auth:
   keys:
     - key: sk-test
-      app_id: app-test
 providers:
   - id: existing-provider
     type: openai
@@ -83,7 +81,7 @@ providers:
     models:
       - test-model
 routes:
-  - app_id: app-test
+  - key: sk-test
     model: test-model
     providers:
       - provider_id: nonexistent-provider
@@ -110,7 +108,6 @@ server:
 auth:
   keys:
     - key: sk-test
-      app_id: app-test
 providers:
   - id: openai-main
     type: openai
@@ -119,7 +116,7 @@ providers:
     models:
       - test-model
 routes:
-  - app_id: app-test
+  - key: sk-test
     model: test-model
     providers:
       - provider_id: openai-main
@@ -149,7 +146,6 @@ server:
 auth:
   keys:
     - key: sk-test
-      app_id: app-test
 providers:
   - id: openai-main
     type: openai
@@ -158,7 +154,7 @@ providers:
     models:
       - gpt-4o
 routes:
-  - app_id: app-test
+  - key: sk-test
     model: unsupported-model
     providers:
       - provider_id: openai-main

@@ -18,6 +18,11 @@ go.work.sum
 .idea/
 .vscode/
 *.swp
+
+# Logs
+*.log
+bench_logs/
+logs/
 *.swo
 
 # Config

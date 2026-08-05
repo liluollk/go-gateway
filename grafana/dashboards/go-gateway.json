@@ -1,0 +1,155 @@
+{
+  "dashboard": {
+    "title": "Go Gateway",
+    "uid": "go-gateway",
+    "tags": ["gateway", "go"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "请求速率",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(gateway_requests_total{status_code=\"200\"}[1m])) by (model)",
+            "legendFormat": "{{model}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "请求延迟 P50/P95/P99",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (model, le))",
+            "legendFormat": "{{model}} P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (model, le))",
+            "legendFormat": "{{model}} P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (model, le))",
+            "legendFormat": "{{model}} P99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "错误率",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(gateway_errors_total[1m])) by (error_type)",
+            "legendFormat": "{{error_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Token 消耗速率",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(gateway_tokens_consumed_total{token_type=\"prompt\"}[1m])) by (model)",
+            "legendFormat": "{{model}} prompt"
+          },
+          {
+            "expr": "sum(rate(gateway_tokens_consumed_total{token_type=\"completion\"}[1m])) by (model)",
+            "legendFormat": "{{model}} completion"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "tokens/s"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "上游供应商健康状态",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "gateway_upstream_health",
+            "legendFormat": "{{provider}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "green", "value": 1 }
+              ]
+            },
+            "mappings": [
+              { "type": "value", "value": "0", "text": "DOWN" },
+              { "type": "value", "value": "1", "text": "UP" }
+            ]
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "总请求数",
+        "type": "stat",
+        "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(gateway_requests_total{status_code=\"200\"})",
+            "legendFormat": ""
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Token 总消耗",
+        "type": "stat",
+        "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(gateway_tokens_consumed_total)",
+            "legendFormat": ""
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none"
+          }
+        }
+      }
+    ],
+    "schemaVersion": 39
+  },
+  "overwrite": true
+}
