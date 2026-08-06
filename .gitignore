@@ -27,6 +27,7 @@ logs/
 
 # Config
 config.yaml
+.env
 
 # Logs
 logs/
